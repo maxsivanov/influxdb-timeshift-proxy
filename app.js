@@ -23,6 +23,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 var reg = /AS "shift_([0-9]+)_(years|months|weeks|days|hours|minutes|seconds)"/;
 var from = /(time > )([0-9]+)(ms)/;
 var to = /(time < )([0-9]+)(ms)/;
+var from_rel = /(time > )(now\(\) - )([0-9]+)([hd])/;
+var to_rel = /(time < )(now\(\) - )([0-9]+)([hd])/;
+
+var debug = require('debug')('rewrite');
 
 function fix_query_time(q, reg, count, unit) {
     var match = q.match(reg);
@@ -30,6 +34,14 @@ function fix_query_time(q, reg, count, unit) {
         var time = moment(parseInt(match[2], 10));
         time.subtract(count, unit);
         return q.replace(reg, match[1] + time.valueOf() + match[3]);
+    } 
+    return q;
+}
+
+function fix_query_time_relative(q, reg, count, unit) {
+    var match = q.match(reg);
+    if (match) {
+        return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
     } 
     return q;
 }
@@ -50,8 +62,12 @@ app.use("/", proxy(process.env.INFLUXDB, {
                         count: parseInt(match[1], 10),
                         unit: match[2]
                     };
+                    debug("From: " + q);
                     var select = fix_query_time(q, from, parseInt(match[1], 10), match[2]);
                     select = fix_query_time(select, to, parseInt(match[1], 10), match[2]);
+                    select = fix_query_time_relative(select, from_rel, parseInt(match[1], 10), match[2]);
+                    select = fix_query_time(select, to_rel, parseInt(match[1], 10), match[2]);
+                    debug("To: " + select);
                     return select;
                 } else {
                     return q;
