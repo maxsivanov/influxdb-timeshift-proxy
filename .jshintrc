@@ -1,0 +1,6 @@
+{
+    "esversion": 6,
+    "evil": true,
+    "node": true,
+    "varstmt": true
+}

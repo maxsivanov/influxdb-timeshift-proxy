@@ -1,3 +1,4 @@
 node_modules
-*.swp
+*.sw?
 *.log
+.DS_Store
