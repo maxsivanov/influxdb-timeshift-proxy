@@ -13,7 +13,14 @@ npm i
 INFLUXDB=192.168.33.11:8086 npm run start 
 ```
 
-Proxy will be available on port 8089.  
+Proxy will be available on port **8089**.
+
+It is possible to use already proxied InfluxDB. 
+
+```
+INFLUXDB=http://my.host.lan/api/datasources/proxy/19 npm run start 
+```
+  
 
 ## Usage
 

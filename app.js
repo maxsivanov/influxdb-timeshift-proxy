@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const proxy = require('express-http-proxy');
+const URL = require('url').URL;
 
 const app = express();
 
@@ -21,11 +22,27 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 const influx = require('./handlers'); 
 
-app.use("/", proxy(process.env.INFLUXDB, {
+const e = process.env;
+
+if (!e.INFLUXDB) {
+    console.log("Usage: INFLUXDB=127.0.0.1:8086 npm run start"); 
+    process.exit(-1);
+}
+
+const influx_url = new URL(e.INFLUXDB.match(/^https*:\/\//) ? e.INFLUXDB : `http://${e.INFLUXDB}`);
+const influx_path = influx_url.pathname.match(/\/$/) ? influx_url.pathname : `${influx_url.pathname}/`; 
+
+const proxy_options = {
     preserveHostHdr: true,
-    forwardPath: influx.forward,
+    forwardPath: influx.forward.bind(this, influx_path),
     intercept: influx.intercept 
-}));
+}; 
+
+if (e.INFLUXDB.match(/^https:\/\//)) {
+    Object.assign(proxy_options, {https: true});
+}
+
+app.use("/", proxy(influx_url.host, proxy_options));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
