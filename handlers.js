@@ -142,7 +142,7 @@ function forward(path, req, res) {
     }
 }
 
-function intercept(rsp, data, req, res, next) {
+function intercept(rsp, data, req, res) {
     if (req.proxyShift || req.proxyMath) {
         const json = JSON.parse(data.toString());
         if (req.proxyMath && json.results) {
@@ -190,6 +190,7 @@ function intercept(rsp, data, req, res, next) {
                             const idx = parseInt(item.substr(1), 10);
                             if (math.keep.indexOf(idx) === -1) {
                                 json.results[idx].series[0].values = [];
+                                //json.results[idx] = {statement_id: json.results[idx].statement_id };
                                 deb_math("Clear values for statement:", idx);
                             }
                         });
@@ -200,9 +201,9 @@ function intercept(rsp, data, req, res, next) {
                 result.statement_id = idx;
             });
         }
-        return next(null, JSON.stringify(json));
+        return JSON.stringify(json);
     }
-    return next(null, data);
+    return data;
 }
 
 module.exports = {

@@ -34,8 +34,8 @@ const influx_path = influx_url.pathname.match(/\/$/) ? influx_url.pathname : `${
 
 const proxy_options = {
     preserveHostHdr: true,
-    forwardPath: influx.forward.bind(this, influx_path),
-    intercept: influx.intercept 
+    proxyReqPathResolver: influx.forward.bind(this, influx_path),
+    userResDecorator: influx.intercept
 }; 
 
 if (e.INFLUXDB.match(/^https:\/\//)) {
