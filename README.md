@@ -21,7 +21,7 @@ It is possible to use already proxied InfluxDB.
 INFLUXDB=http://my.host.lan/api/datasources/proxy/19 npm run start 
 ```
 
-Feature is not very stable yet. Sometimes proxy will fail with HTTP 500. Waiting for [this bug in express-http-proxy](https://github.com/villadora/express-http-proxy/issues/177) to fix. 
+Proxying of Proxied :) feature is not very stable yet. Sometimes proxy will fail with HTTP 500. Waiting for [this bug in express-http-proxy](https://github.com/villadora/express-http-proxy/issues/177) to fix. Anyway direct connection i.e `INFLUXDB=192.168.33.11:8086 npm run start` works fine.
   
 
 ## Usage
@@ -65,7 +65,7 @@ Sum two metrics and **keep** source metrics in result
 MATH name="ALL" expr="$0 + $1" keep="$0,$1"
 ```
 
-Sum two metrics and for Singlestat panel
+Sum two metrics and Singlestat panel
 
 ```
 MATH name="ALL" expr="$0 + $1" singlestat
