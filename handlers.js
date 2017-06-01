@@ -10,6 +10,7 @@ const from = /(time > )([0-9]+)(ms)/;
 const to = /(time < )([0-9]+)(ms)/;
 const from_rel = /(time > )(now\(\) - )([0-9]+)([hd])/;
 const to_rel = /(time < )(now\(\) - )([0-9]+)([hd])/;
+const singlestat = /singlestat/;
 
 const math_re = /^MATH /; 
 const math_name = /name="([0-9a-zA-Z]+)"/;
@@ -101,6 +102,7 @@ function forward(path, req, res) {
                         name: name_parts[1],
                         expr: expr_parts[1],
                         vars: expr_parts[1].match(reEveryVar),
+                        singlestat: q.match(singlestat),
                         keep: keep_parts ? keep_parts[1].split(',').map(function (idx) {
                             return parseInt(idx.trim().substring(1), 10);
                         }) : []
@@ -189,8 +191,11 @@ function intercept(rsp, data, req, res) {
                         math.vars.forEach(function (item) {
                             const idx = parseInt(item.substr(1), 10);
                             if (math.keep.indexOf(idx) === -1) {
-                                json.results[idx].series[0].values = [];
-                                //json.results[idx] = {statement_id: json.results[idx].statement_id };
+                                if (math.singlestat) {
+                                    json.results[idx] = {};
+                                } else {
+                                    json.results[idx].series[0].values = [];
+                                }
                                 deb_math("Clear values for statement:", idx);
                             }
                         });

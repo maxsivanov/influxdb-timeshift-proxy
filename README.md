@@ -20,6 +20,8 @@ It is possible to use already proxied InfluxDB.
 ```
 INFLUXDB=http://my.host.lan/api/datasources/proxy/19 npm run start 
 ```
+
+Feature is not very stable yet. Sometimes proxy will fail with HTTP 500. Waiting for [this bug in express-http-proxy](https://github.com/villadora/express-http-proxy/issues/177) to fix. 
   
 
 ## Usage
@@ -35,6 +37,7 @@ You can use `MATH` query to do mathematical operation between previously defined
 * `$0`, `$1` ... etc are indexes of query results to be used in expression.
 * `Infinity` and `NaN` results will be converted to `null`, so do not be afraid of division by zero.   
 * `MATH` will clear returned values from query results used for mathematical operation. Use `keep` attribute to keep source data.
+* Use `singlestat` attribute if you want to use `MATH` in Singlestat panels 
 
 ## Example requests
 
@@ -60,4 +63,10 @@ Sum two metrics and **keep** source metrics in result
 
 ```
 MATH name="ALL" expr="$0 + $1" keep="$0,$1"
+```
+
+Sum two metrics and for Singlestat panel
+
+```
+MATH name="ALL" expr="$0 + $1" singlestat
 ```
