@@ -6,6 +6,8 @@ Proxy can to mathematical operations between queries (i.e. between metrics).
 
 ## Installation
 
+*Node.js version 6* is required to run the code.
+
 ```
 git clone https://github.com/maxsivanov/influxdb-timeshift-proxy.git
 cd influxdb-timeshift-proxy
