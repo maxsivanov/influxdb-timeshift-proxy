@@ -6,7 +6,7 @@ Proxy can to mathematical operations between queries (i.e. between metrics).
 
 ## Installation
 
-*Node.js version 6* is required to run the code.
+**Node.js version 6 or later** is required to run the code.
 
 ```
 git clone https://github.com/maxsivanov/influxdb-timeshift-proxy.git
@@ -67,7 +67,7 @@ Sum two metrics and **keep** source metrics in result
 MATH name="ALL" expr="$0 + $1" keep="$0,$1"
 ```
 
-Sum two metrics and Singlestat panel
+Sum two metrics for **singlestat** panel
 
 ```
 MATH name="ALL" expr="$0 + $1" singlestat
