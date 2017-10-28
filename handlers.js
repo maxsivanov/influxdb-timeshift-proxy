@@ -6,13 +6,13 @@ const moment = require('moment');
 const resolve = require('url').resolve;
 
 const shift_re = /AS "shift_([0-9]+)_(years|months|weeks|days|hours|minutes|seconds)"/;
-const from = /(time > )([0-9]+)(ms)/;
-const to = /(time < )([0-9]+)(ms)/;
-const from_rel = /(time > )(now\(\) - )([0-9]+)([hd])/;
-const to_rel = /(time < )(now\(\) - )([0-9]+)([hd])/;
+const from = /(time *>=? *)([0-9]+)(ms)/;
+const to = /(time *<=? *)([0-9]+)(ms)/;
+const from_rel = /(time *>=? *)(now\(\) *- *)([0-9]+)([hd])/;
+const to_rel = /(time *<=? *)(now\(\) *- *)([0-9]+)([hd])/;
 const singlestat = /singlestat/;
 
-const math_re = /^MATH /; 
+const math_re = /^MATH /;
 const math_name = /name="([0-9a-zA-Z]+)"/;
 const math_expr = /expr="([+*/%$0-9. -]+)"/;
 const math_keep = /keep="([$0-9, ]+)"/;
@@ -23,7 +23,7 @@ function fix_query_time(q, reg, count, unit) {
         const time = moment(parseInt(match[2], 10));
         time.subtract(count, unit);
         return q.replace(reg, match[1] + time.valueOf() + match[3]);
-    } 
+    }
     return q;
 }
 
@@ -31,7 +31,7 @@ function fix_query_time_relative(q, reg, count, unit) {
     const match = q.match(reg);
     if (match) {
         return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
-    } 
+    }
     return q;
 }
 
@@ -78,7 +78,7 @@ function calculate_values(results, math) {
     return [];
 }
 
-const reLeadingSlash = /^\//; 
+const reLeadingSlash = /^\//;
 const reLeadingSemicolon = /^;+/;
 const reEveryVar = /\$[0-9]+/g;
 const reTwoSemicolon = /;;/;
@@ -87,13 +87,13 @@ function forward(path, req, res) {
     if ((req.url.indexOf("/query") === 0) && (req.query.q)) {
         const query = req.query.q.replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
         const parts = query.split(';').map(function (q, idx) {
-            let match; 
+            let match;
             deb_query(idx, q);
             match = q.match(math_re);
             if (match) {
-                const name_parts = math_name.exec(q); 
-                const expr_parts = math_expr.exec(q); 
-                const keep_parts = math_keep.exec(q); 
+                const name_parts = math_name.exec(q);
+                const expr_parts = math_expr.exec(q);
+                const keep_parts = math_keep.exec(q);
                 if (name_parts && expr_parts) {
                     if (!req.proxyMath) {
                         req.proxyMath = {};
@@ -138,7 +138,7 @@ function forward(path, req, res) {
                 queries.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        return resolve(path, "query") + "?" + queries.join("&"); 
+        return resolve(path, "query") + "?" + queries.join("&");
     } else {
         return resolve(path, req.url.replace(reLeadingSlash, ''));
     }
@@ -149,16 +149,16 @@ function intercept(rsp, data, req, res) {
         const json = JSON.parse(data.toString());
         if (req.proxyMath && json.results) {
             Object.keys(req.proxyMath).forEach(function (key) {
-                json.results.splice(parseInt(key, 10), 0, { 
-                    statement_id: null, 
-                    series: [] 
+                json.results.splice(parseInt(key, 10), 0, {
+                    statement_id: null,
+                    series: []
                 });
             });
         }
         if (req.proxyShift && Object.keys(req.proxyShift).length && json.results) {
             const results = json.results.map(function (result, idx) {
                 if (req.proxyShift[idx] && result.series) {
-                    return Object.assign({}, result, { 
+                    return Object.assign({}, result, {
                         series: result.series.map(function (serie) {
                             return Object.assign({}, serie, { values: serie.values.map(function (item) {
                                 const time = moment(item[0]);
