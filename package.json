@@ -1,6 +1,6 @@
 {
   "name": "influxdb-timeshift-proxy",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "private": false,
   "scripts": {
     "start": "node ./bin/www"
@@ -16,6 +16,7 @@
     "morgan": "~1.7.0",
     "serve-favicon": "~2.3.2"
   },
+  "bin": "./bin/www",
   "author": "Max S. Ivanov <maxsivanov@gmail.com>",
   "repository": "https://github.com/maxsivanov/influxdb-timeshift-proxy.git",
   "homepage": "https://github.com/maxsivanov/influxdb-timeshift-proxy",
