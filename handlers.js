@@ -3,13 +3,18 @@ const deb_query = require('debug')('query');
 const deb_math = require('debug')('math');
 
 const moment = require('moment');
-const resolve = require('url').resolve;
+const { resolve } = require('url');
 
-const shift_re = /AS "shift_([0-9]+)_(years|months|weeks|days|hours|minutes|seconds)"/;
-const from = /(time *>=? *)([0-9]+)(ms)/;
-const to = /(time *<=? *)([0-9]+)(ms)/;
-const from_rel = /(time *>=? *)(now\(\) *- *)([0-9]+)([hd])/;
-const to_rel = /(time *<=? *)(now\(\) *- *)([0-9]+)([hd])/;
+const units = [
+    'years', 'months', 'weeks', 'days', 'hours', 'minutes', 'seconds', 'milliseconds',
+    'year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond',
+    'y', 'M', 'w', 'd', 'h', 'm', 's', 'ms'
+];
+const shift_re = new RegExp(`[Aa][Ss]\\s+"shift_([0-9]+)_(${units.join('|')})"`);
+const from = /(time\s*>=?\s*)([0-9]+)(ms)/;
+const to = /(time\s*<=?\s*)([0-9]+)(ms)/;
+const from_rel = /(time\s*>=?\s*)(now\(\)\s*-\s*)([0-9]+)([usmhdw])/;
+const to_rel = /(time\s*<=?\s*)(now\(\)\s*-\s*)([0-9]+)([usmhdw])/;
 const singlestat = /singlestat/;
 
 const math_re = /^MATH /;
@@ -86,7 +91,7 @@ const reTwoSemicolon = /;;/;
 function forward(path, req, res) {
     if ((req.url.indexOf("/query") === 0) && (req.query.q)) {
         const query = req.query.q.replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
-        const parts = query.split(';').map(function (q, idx) {
+        const parts = query.split(';').map((q, idx) => {
             let match;
             deb_query(idx, q);
             match = q.match(math_re);
@@ -103,7 +108,7 @@ function forward(path, req, res) {
                         expr: expr_parts[1],
                         vars: expr_parts[1].match(reEveryVar),
                         singlestat: q.match(singlestat),
-                        keep: keep_parts ? keep_parts[1].split(',').map(function (idx) {
+                        keep: keep_parts ? keep_parts[1].split(',').map(idx => {
                             return parseInt(idx.trim().substring(1), 10);
                         }) : []
                     };
@@ -119,11 +124,12 @@ function forward(path, req, res) {
                     count: parseInt(match[1], 10),
                     unit: match[2]
                 };
+                deb_rewrite("<-- " + q);
                 let select = fix_query_time(q, from, parseInt(match[1], 10), match[2]);
                 select = fix_query_time(select, to, parseInt(match[1], 10), match[2]);
                 select = fix_query_time_relative(select, from_rel, parseInt(match[1], 10), match[2]);
-                select = fix_query_time(select, to_rel, parseInt(match[1], 10), match[2]);
-                deb_rewrite("To: " + select);
+                select = fix_query_time_relative(select, to_rel, parseInt(match[1], 10), match[2]);
+                deb_rewrite("--> " + select);
                 return select;
             } else {
                 return q;
@@ -148,7 +154,7 @@ function intercept(rsp, data, req, res) {
     if (req.proxyShift || req.proxyMath) {
         const json = JSON.parse(data.toString());
         if (req.proxyMath && json.results) {
-            Object.keys(req.proxyMath).forEach(function (key) {
+            Object.keys(req.proxyMath).forEach(key => {
                 json.results.splice(parseInt(key, 10), 0, {
                     statement_id: null,
                     series: []
@@ -156,11 +162,11 @@ function intercept(rsp, data, req, res) {
             });
         }
         if (req.proxyShift && Object.keys(req.proxyShift).length && json.results) {
-            const results = json.results.map(function (result, idx) {
+            const results = json.results.map((result, idx) => {
                 if (req.proxyShift[idx] && result.series) {
                     return Object.assign({}, result, {
-                        series: result.series.map(function (serie) {
-                            return Object.assign({}, serie, { values: serie.values.map(function (item) {
+                        series: result.series.map(serie => {
+                            return Object.assign({}, serie, { values: serie.values.map(item => {
                                 const time = moment(item[0]);
                                 time.add(req.proxyShift[idx].count, req.proxyShift[idx].unit);
                                 return [ time.valueOf(), item[1]];
@@ -173,22 +179,20 @@ function intercept(rsp, data, req, res) {
             json.results = results;
         }
         if (req.proxyMath && json.results) {
-            Object.keys(req.proxyMath).forEach(function (key) {
+            Object.keys(req.proxyMath).forEach(key => {
                 const math = req.proxyMath[key];
                 if (json.results[key]) {
                     deb_math("Do math:", math.expr, "for statement:", key);
                     json.results[key] = {
                         statement_id: null,
-                        series: [
-                            {
-                                name: math.name,
-                                columns: ["time", "value"],
-                                values: calculate_values(json.results, math)
-                            }
-                        ]
+                        series: [{
+                            name: math.name,
+                            columns: ["time", "value"],
+                            values: calculate_values(json.results, math)
+                        }]
                     };
                     if (math.vars) {
-                        math.vars.forEach(function (item) {
+                        math.vars.forEach(item => {
                             const idx = parseInt(item.substr(1), 10);
                             if (math.keep.indexOf(idx) === -1) {
                                 if (math.singlestat) {
@@ -202,7 +206,7 @@ function intercept(rsp, data, req, res) {
                     }
                 }
             });
-            json.results.forEach(function (result, idx) {
+            json.results.forEach((result, idx) => {
                 result.statement_id = idx;
             });
         }

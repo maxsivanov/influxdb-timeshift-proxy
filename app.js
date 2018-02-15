@@ -1,8 +1,6 @@
 const express = require('express');
 const path = require('path');
-const favicon = require('serve-favicon');
 const logger = require('morgan');
-const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const proxy = require('express-http-proxy');
@@ -20,17 +18,17 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const influx = require('./handlers'); 
+const influx = require('./handlers');
 
 const e = process.env;
 
 if (!e.INFLUXDB) {
-    console.log("Usage: INFLUXDB=127.0.0.1:8086 npm run start");
+    console.log('Usage: INFLUXDB=127.0.0.1:8086 npm run start');
     process.exit(-1);
 }
 
 const influx_url = URL.parse(e.INFLUXDB.match(/^https*:\/\//) ? e.INFLUXDB : `http://${e.INFLUXDB}`);
-const influx_path = influx_url.pathname.match(/\/$/) ? influx_url.pathname : `${influx_url.pathname}/`; 
+const influx_path = influx_url.pathname.match(/\/$/) ? influx_url.pathname : `${influx_url.pathname}/`;
 
 const proxy_options = {
     preserveHostHdr: true,

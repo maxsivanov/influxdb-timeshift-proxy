@@ -12,15 +12,15 @@ Proxy can to mathematical operations between queries (i.e. between metrics).
 git clone https://github.com/maxsivanov/influxdb-timeshift-proxy.git
 cd influxdb-timeshift-proxy
 npm i
-INFLUXDB=192.168.33.11:8086 npm run start 
+INFLUXDB=192.168.33.11:8086 npm run start
 ```
 
 Proxy will be available on port **8089**.
 
-It is possible to use already proxied InfluxDB. 
+It is possible to use already proxied InfluxDB.
 
 ```
-INFLUXDB=http://my.host.lan/api/datasources/proxy/19 npm run start 
+INFLUXDB=http://my.host.lan/api/datasources/proxy/19 npm run start
 ```
 
 Proxying of Proxied :) feature is not very stable yet. Sometimes proxy will fail with HTTP 500. Waiting for [this bug in express-http-proxy](https://github.com/villadora/express-http-proxy/issues/177) to fix. Anyway direct connection i.e `INFLUXDB=192.168.33.11:8086 npm run start` works fine.
@@ -28,18 +28,20 @@ Proxying of Proxied :) feature is not very stable yet. Sometimes proxy will fail
 
 ## Usage
 
-Proxy will go timeshift on queries with fields listed with alias `AS "shift_1_weeks"`. `1` can be any positive integer number. `weeks` can be`years|months|weeks|days|hours|minutes|seconds`.
+Proxy will go timeshift on queries with fields listed with alias `AS "shift_1_weeks"`. `1` can be any positive integer number. `weeks` can be any unit described here [https://momentjs.com/docs/#/manipulating/add/](https://momentjs.com/docs/#/manipulating/add/).
 
 You can use `MATH` query to do mathematical operation between previously defined queries.
 
 ![Example of MATH query](math_example.png)
 
-* `name` and `expr` attributes are mandatory. 
-* You can use any mathematical operation in `expr`: `+`, `-`, `*`, `/`, `%`. 
+* `name` and `expr` attributes are mandatory.
+* You can use any mathematical operation in `expr`: `+`, `-`, `*`, `/`, `%`.
 * `$0`, `$1` ... etc are indexes of query results to be used in expression.
-* `Infinity` and `NaN` results will be converted to `null`, so do not be afraid of division by zero.   
+* `Infinity` and `NaN` results will be converted to `null`, so do not be afraid of division by zero.
 * `MATH` will clear returned values from query results used for mathematical operation. Use `keep` attribute to keep source data.
-* Use `singlestat` attribute if you want to use `MATH` in Singlestat panels 
+* Use `singlestat` attribute if you want to use `MATH` in Singlestat panels.
+
+![Example of MATH query](math_singlestat.png)
 
 ## Example requests
 
@@ -72,3 +74,13 @@ Sum two metrics for **singlestat** panel
 ```
 MATH name="ALL" expr="$0 + $1" singlestat
 ```
+
+## Debugging
+
+Run proxy with `DEBUG` environment variable set:
+
+* `query` -- display all queries
+* `rewrite` -- display all query rewrites
+* `math` -- display all MATH calculations are made 
+
+
