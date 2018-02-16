@@ -14,6 +14,12 @@ cd influxdb-timeshift-proxy
 npm i
 INFLUXDB=192.168.33.11:8086 npm run start
 ```
+**OR**
+
+```
+npm i influxdb-timeshift-proxy -g
+INFLUXDB=192.168.33.11:8086 influxdb-timeshift-proxy
+```
 
 Proxy will be available on port **8089**.
 
