@@ -8,6 +8,8 @@ Proxy can to mathematical operations between queries (i.e. between metrics).
 
 **Node.js version 6 or later** is required to run the code.
 
+We assume that InfluxDB in available on `192.168.33.11:8086`
+
 ```
 git clone https://github.com/maxsivanov/influxdb-timeshift-proxy.git
 cd influxdb-timeshift-proxy
@@ -19,6 +21,13 @@ INFLUXDB=192.168.33.11:8086 npm run start
 ```
 npm i influxdb-timeshift-proxy -g
 INFLUXDB=192.168.33.11:8086 influxdb-timeshift-proxy
+```
+
+**On Windows** you need other command to run proxy
+
+```
+setx INFLUXDB 192.168.33.11:8086
+influxdb-timeshift-proxy
 ```
 
 Proxy will be available on port **8089**.
