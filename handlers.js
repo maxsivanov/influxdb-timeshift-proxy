@@ -19,7 +19,7 @@ const singlestat = /singlestat/;
 
 const math_re = /^MATH /;
 const math_name = /name="([0-9a-zA-Z]+)"/;
-const math_expr = /expr="([+*/%$0-9. -]+)"/;
+const math_expr = /expr="([+*/%$0-9.() -]+)"/;
 const math_keep = /keep="([$0-9, ]+)"/;
 
 function fix_query_time(q, reg, count, unit) {
