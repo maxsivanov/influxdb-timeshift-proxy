@@ -37,6 +37,12 @@ function fix_query_time_relative(q, reg, count, unit) {
     if (match) {
         return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
     }
+    else if (reg === to_rel) {
+        const match = q.match(from_rel);
+        if (match) {
+            return q.replace(match[0], "time <= now()" + " - " + moment.duration(count, unit).valueOf() + "ms AND " + match[0]);
+        }
+    }
     return q;
 }
 
