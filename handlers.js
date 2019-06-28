@@ -95,8 +95,8 @@ const reEveryVar = /\$[0-9]+/g;
 const reTwoSemicolon = /;;/;
 
 function forward(path, req, res) {
-    if ((req.url.indexOf("/query") === 0) && (req.query.q)) {
-        const query = req.query.q.replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
+    if ((req.url.indexOf("/query") === 0) && (req.query.q || req.body.q)) {
+        const query = (req.query.q ? req.query.q : req.body.q).replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
         const parts = query.split(';').map((q, idx) => {
             let match;
             deb_query(idx, q);
