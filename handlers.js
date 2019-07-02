@@ -146,15 +146,11 @@ function forward(path, req, res) {
         });
         const queries = [];
         for (let key in ret) {
-            if (ret.hasOwnProperty(key)) {
+            if (ret.hasOwnProperty(key) && (key != 'q' || req.query.q)) {
                 queries.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        if (req.body.q) {
-            return resolve(path, "query") + "?" + queries.join("&");
-        } else {
-            return resolve(path, "query");
-        }
+        return resolve(path, "query") + "?" + queries.join("&");
     } else {
         return resolve(path, req.url.replace(reLeadingSlash, ''));
     }
