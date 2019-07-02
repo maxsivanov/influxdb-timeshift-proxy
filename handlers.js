@@ -96,7 +96,7 @@ const reTwoSemicolon = /;;/;
 
 function forward(path, req, res) {
     if ((req.url.indexOf("/query") === 0) && (req.query.q || req.body.q)) {
-        const query = (req.query.q ? req.query.q : req.body.q).replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
+        const query = (req.body.q ? req.body.q : req.query.q).replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
         const parts = query.split(';').map((q, idx) => {
             let match;
             deb_query(idx, q);
@@ -141,7 +141,7 @@ function forward(path, req, res) {
                 return q;
             }
         });
-        const ret = Object.assign({}, req.query, {
+        const ret = Object.assign({}, (req.body.q ? req.body : req.query), {
             q: parts.join(';')
         });
         const queries = [];
@@ -150,7 +150,11 @@ function forward(path, req, res) {
                 queries.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        return resolve(path, "query") + "?" + queries.join("&");
+        if (req.post.q) {
+            return resolve(path, "query") + "?" + queries.join("&");
+        } else {
+            return resolve(path, "query");
+        }
     } else {
         return resolve(path, req.url.replace(reLeadingSlash, ''));
     }
