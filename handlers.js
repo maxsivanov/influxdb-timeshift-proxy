@@ -174,7 +174,7 @@ function decorate_request_body(path, body, req) {
                 params.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        return resolve(path, "query") + "?" + params.join("&");
+        return params.join("&");
     } else {
         return body;
     }
@@ -246,6 +246,7 @@ function intercept_response(rsp, data, req, res) {
 }
 
 module.exports = {
-    forward,
-    intercept
+    decorate_request_body,
+    resolve_request_path,
+    intercept_response
 };
