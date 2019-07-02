@@ -150,7 +150,7 @@ function forward(path, req, res) {
                 queries.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        if (req.post.q) {
+        if (req.body.q) {
             return resolve(path, "query") + "?" + queries.join("&");
         } else {
             return resolve(path, "query");
