@@ -141,14 +141,17 @@ function forward(path, req, res) {
                 return q;
             }
         });
-        const ret = Object.assign({}, (req.body.q ? req.body : req.query), {
+        const ret = Object.assign({}, req.query, {
             q: parts.join(';')
         });
         const queries = [];
         for (let key in ret) {
-            if (ret.hasOwnProperty(key) && (key != 'q' || req.query.q)) {
+            if (ret.hasOwnProperty(key)) {
                 queries.push(key + "=" + encodeURIComponent(ret[key]));
             }
+        }
+        if (req.body.q) {
+            delete queries.q
         }
         return resolve(path, "query") + "?" + queries.join("&");
     } else {
