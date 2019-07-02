@@ -37,6 +37,12 @@ function fix_query_time_relative(q, reg, count, unit) {
     if (match) {
         return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
     }
+    else if (reg === to_rel) {
+        const match = q.match(from_rel);
+        if (match) {
+            return q.replace(match[0], "time <= now()" + " - " + moment.duration(count, unit).valueOf() + "ms AND " + match[0]);
+        }
+    }
     return q;
 }
 
@@ -88,69 +94,93 @@ const reLeadingSemicolon = /^;+/;
 const reEveryVar = /\$[0-9]+/g;
 const reTwoSemicolon = /;;/;
 
-function forward(path, req, res) {
-    if ((req.url.indexOf("/query") === 0) && (req.query.q)) {
-        const query = req.query.q.replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
-        const parts = query.split(';').map((q, idx) => {
-            let match;
-            deb_query(idx, q);
-            match = q.match(math_re);
-            if (match) {
-                const name_parts = math_name.exec(q);
-                const expr_parts = math_expr.exec(q);
-                const keep_parts = math_keep.exec(q);
-                if (name_parts && expr_parts) {
-                    if (!req.proxyMath) {
-                        req.proxyMath = {};
-                    }
-                    req.proxyMath[idx] = {
-                        name: name_parts[1],
-                        expr: expr_parts[1],
-                        vars: expr_parts[1].match(reEveryVar),
-                        singlestat: q.match(singlestat),
-                        keep: keep_parts ? keep_parts[1].split(',').map(idx => {
-                            return parseInt(idx.trim().substring(1), 10);
-                        }) : []
-                    };
-                    return '';
+function process_incoming_request(path, req) {
+    const query = (req.body.q ? req.body.q : req.query.q).replace(reLeadingSemicolon, '').replace(reTwoSemicolon, '');
+    const parts = query.split(';').map((q, idx) => {
+        let match;
+        deb_query(idx, q);
+        match = q.match(math_re);
+        if (match) {
+            const name_parts = math_name.exec(q);
+            const expr_parts = math_expr.exec(q);
+            const keep_parts = math_keep.exec(q);
+            if (name_parts && expr_parts) {
+                if (!req.proxyMath) {
+                    req.proxyMath = {};
                 }
-            }
-            match = q.match(shift_re);
-            if (match) {
-                if (!req.proxyShift) {
-                    req.proxyShift = {};
-                }
-                req.proxyShift[idx] = {
-                    count: parseInt(match[1], 10),
-                    unit: match[2]
+                req.proxyMath[idx] = {
+                    name: name_parts[1],
+                    expr: expr_parts[1],
+                    vars: expr_parts[1].match(reEveryVar),
+                    singlestat: q.match(singlestat),
+                    keep: keep_parts ? keep_parts[1].split(',').map(idx => {
+                        return parseInt(idx.trim().substring(1), 10);
+                    }) : []
                 };
-                deb_rewrite("<-- " + q);
-                let select = fix_query_time(q, from, parseInt(match[1], 10), match[2]);
-                select = fix_query_time(select, to, parseInt(match[1], 10), match[2]);
-                select = fix_query_time_relative(select, from_rel, parseInt(match[1], 10), match[2]);
-                select = fix_query_time_relative(select, to_rel, parseInt(match[1], 10), match[2]);
-                deb_rewrite("--> " + select);
-                return select;
-            } else {
-                return q;
+                return '';
             }
-        });
+        }
+        match = q.match(shift_re);
+        if (match) {
+            if (!req.proxyShift) {
+                req.proxyShift = {};
+            }
+            req.proxyShift[idx] = {
+                count: parseInt(match[1], 10),
+                unit: match[2]
+            };
+            deb_rewrite("<-- " + q);
+            let select = fix_query_time(q, from, parseInt(match[1], 10), match[2]);
+            select = fix_query_time(select, to, parseInt(match[1], 10), match[2]);
+            select = fix_query_time_relative(select, from_rel, parseInt(match[1], 10), match[2]);
+            select = fix_query_time_relative(select, to_rel, parseInt(match[1], 10), match[2]);
+            deb_rewrite("--> " + select);
+            return select;
+        } else {
+            return q;
+        }
+    });
+
+    return parts;
+}
+
+function resolve_request_path(path, req) {
+    if ((req.url.indexOf("/query") === 0) && (req.query.q)) {
+        const parts = process_incoming_request(path, req);
         const ret = Object.assign({}, req.query, {
             q: parts.join(';')
         });
-        const queries = [];
+        const params = [];
         for (let key in ret) {
             if (ret.hasOwnProperty(key)) {
-                queries.push(key + "=" + encodeURIComponent(ret[key]));
+                params.push(key + "=" + encodeURIComponent(ret[key]));
             }
         }
-        return resolve(path, "query") + "?" + queries.join("&");
+        return resolve(path, "query") + "?" + params.join("&");
     } else {
         return resolve(path, req.url.replace(reLeadingSlash, ''));
     }
 }
 
-function intercept(rsp, data, req, res) {
+function decorate_request_body(path, body, req) {
+    if ((req.url.indexOf("/query") === 0) && (req.body.q)) {
+        const parts = process_incoming_request(path, req);
+        const ret = Object.assign({}, body, {
+            q: parts.join(';')
+        });
+        const params = [];
+        for (let key in ret) {
+            if (ret.hasOwnProperty(key)) {
+                params.push(key + "=" + encodeURIComponent(ret[key]));
+            }
+        }
+        return params.join("&");
+    } else {
+        return body;
+    }
+}
+
+function intercept_response(rsp, data, req, res) {
     if (req.proxyShift || req.proxyMath) {
         const json = JSON.parse(data.toString());
         if (req.proxyMath && json.results) {
@@ -216,6 +246,7 @@ function intercept(rsp, data, req, res) {
 }
 
 module.exports = {
-    forward,
-    intercept
+    decorate_request_body,
+    resolve_request_path,
+    intercept_response
 };
