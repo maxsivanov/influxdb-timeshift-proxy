@@ -27,6 +27,12 @@ function fix_query_time(q, reg, count, unit) {
     if (match) {
         const time = moment(parseInt(match[2], 10));
         time.subtract(count, unit);
+        if (reg == from) {
+            if (q.match(to) || q.match(to_rel))
+                return q.replace(reg, match[1] + time.valueOf() + match[3]);
+            else
+                return q.replace(reg, match[1] + time.valueOf() + match[3] + " AND time < now() - 0h");
+        }
         return q.replace(reg, match[1] + time.valueOf() + match[3]);
     }
     return q;
@@ -35,6 +41,12 @@ function fix_query_time(q, reg, count, unit) {
 function fix_query_time_relative(q, reg, count, unit) {
     const match = q.match(reg);
     if (match) {
+        if (reg == from_rel) {
+            if (q.match(to) || q.match(to_rel))
+                return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
+            else
+                return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms AND time < now() - 0h");
+        }
         return q.replace(match[0], match[0] + " - " + moment.duration(count, unit).valueOf() + "ms");
     }
     return q;
