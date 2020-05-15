@@ -10,7 +10,7 @@ const units = [
     'year', 'month', 'week', 'day', 'hour', 'minute', 'second', 'millisecond', 'quarter',
     'y', 'M', 'w', 'd', 'h', 'm', 's', 'ms', 'Q',
 ];
-const shift_re = new RegExp(`[Aa][Ss]\\s+"shift_([0-9]+)_(${units.join('|')})"`);
+const shift_re = new RegExp(`[Aa][Ss]\\s+"(b|)shift_([0-9]+)_(${units.join('|')})"`);
 const from = /(time\s*>=?\s*)([0-9]+)(ms)/;
 const to = /(time\s*<=?\s*)([0-9]+)(ms)/;
 const from_rel = /(time\s*>=?\s*)(now\(\)\s*-\s*)([0-9]+)([usmhdw])/;
@@ -26,7 +26,8 @@ function fix_query_time(q, reg, count, unit) {
     const match = q.match(reg);
     if (match) {
         const time = moment(parseInt(match[2], 10));
-        time.subtract(count, unit);
+        //time.subtract(count, unit);
+	time.add(count, unit);
         return q.replace(reg, match[1] + time.valueOf() + match[3]);
     }
     return q;
@@ -121,8 +122,9 @@ function forward(path, req, res) {
                     req.proxyShift = {};
                 }
                 req.proxyShift[idx] = {
+                    back: (match.splice(1,1)[0] == "b"),
                     count: parseInt(match[1], 10),
-                    unit: match[2]
+                    unit: match[2],
                 };
                 deb_rewrite("<-- " + q);
                 let select = fix_query_time(q, from, parseInt(match[1], 10), match[2]);
@@ -168,7 +170,11 @@ function intercept(rsp, data, req, res) {
                         series: result.series.map(serie => {
                             return Object.assign({}, serie, { values: serie.values.map(item => {
                                 const time = moment(item[0]);
-                                time.add(req.proxyShift[idx].count, req.proxyShift[idx].unit);
+                                if(req.proxyShift[idx].back) {
+                                    time.subtract(req.proxyShift[idx].count, req.proxyShift[idx].unit);
+                                } else {
+                                    time.add(req.proxyShift[idx].count, req.proxyShift[idx].unit);
+                                }
                                 return [ time.valueOf(), item[1]];
                             })});
                         })

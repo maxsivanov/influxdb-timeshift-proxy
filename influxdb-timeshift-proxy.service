@@ -1,0 +1,19 @@
+[Unit]
+Description=Add timeshift feature to influxdb for grafana users with mathematics between metrics feature
+Documentation=https://github.com/maxsivanov/influxdb-timeshift-proxy
+After=network-online.target
+Requires=influxdb.service
+
+[Service]
+User=influxdb
+Group=influxdb
+Environment=INFLUXDB=127.0.0.1:8086
+EnvironmentFile=-/etc/default/influxdb-timeshift-proxy
+WorkingDirectory=/opt/influxdb-timeshift-proxy
+ExecStart=/usr/bin/npm run start
+
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=influxd.service
